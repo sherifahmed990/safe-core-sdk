@@ -435,12 +435,28 @@ export class Safe4337Pack extends RelayKitBasePack<{
       safeOperation.addEstimations(estimateUserOperationGas)
     }
 
+    let signature = '0x'
+    if (feeEstimator.dummySignatureCreator == null) {
+      signature = getDummySignature(this.#SAFE_WEBAUTHN_SHARED_SIGNER_ADDRESS, threshold)
+    } else if (feeEstimator.overrides != null && feeEstimator.overrides.expectedSigners != null) {
+      signature = feeEstimator.dummySignatureCreator({
+        expectedSigners: feeEstimator.overrides.expectedSigners,
+        validAfter: feeEstimator.overrides.validAfter,
+        validUntil: feeEstimator.overrides.validUntil,
+        isInit: feeEstimator.overrides.isInit,
+        webAuthnSharedSigner: feeEstimator.overrides.webAuthnSharedSigner,
+        webAuthnSignerFactory: feeEstimator.overrides.webAuthnSignerFactory,
+        webAuthnSignerSingleton: feeEstimator.overrides.webAuthnSignerSingleton,
+        eip7212WebAuthnPrecompileVerifier: feeEstimator.overrides.eip7212WebAuthnPrecompileVerifier,
+        eip7212WebAuthnContractVerifier: feeEstimator.overrides.eip7212WebAuthnContractVerifier
+      })
+    }
     const postEstimationData = await feeEstimator?.postEstimateUserOperationGas?.({
       bundlerUrl: this.#BUNDLER_URL,
       entryPoint: this.#ENTRYPOINT_ADDRESS,
       userOperation: {
         ...safeOperation.getUserOperation(),
-        signature: getDummySignature(this.#SAFE_WEBAUTHN_SHARED_SIGNER_ADDRESS, threshold)
+        signature
       },
       paymasterOptions: this.#paymasterOptions
     })

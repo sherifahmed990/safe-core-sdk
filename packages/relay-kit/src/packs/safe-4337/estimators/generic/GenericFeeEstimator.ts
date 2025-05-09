@@ -1,6 +1,8 @@
 import { EstimateGasData } from '@safe-global/types-kit'
 import {
+  DummySignatureCreatorFunctionProps,
   EstimateFeeFunctionProps,
+  GenericFeeEstimatorOverrides,
   IFeeEstimator,
   UserOperationStringValues
 } from '@safe-global/relay-kit/packs/safe-4337/types'
@@ -11,6 +13,7 @@ import {
 } from '@safe-global/relay-kit/packs/safe-4337/utils'
 import { RPC_4337_CALLS } from '@safe-global/relay-kit/packs/safe-4337/constants'
 import { PaymasterRpcSchema } from './types'
+import { SafeAccountV0_3_0 as SafeAccount } from 'abstractionkit'
 
 /**
  * GenericFeeEstimator is a class that implements the IFeeEstimator interface. You can implement three optional methods that will be called during the estimation process:
@@ -20,14 +23,12 @@ import { PaymasterRpcSchema } from './types'
 export class GenericFeeEstimator implements IFeeEstimator {
   nodeUrl: string
   chainId: string
-  gasMultiplier: number
-  constructor(nodeUrl: string, chainId: string, gasMultiplier: number = 1.5) {
+  overrides?: GenericFeeEstimatorOverrides
+
+  constructor(nodeUrl: string, chainId: string, overrides: GenericFeeEstimatorOverrides = {}) {
     this.nodeUrl = nodeUrl
     this.chainId = chainId
-    if (gasMultiplier <= 0) {
-      throw new Error("gasMultiplier can't be equal or less than 0.")
-    }
-    this.gasMultiplier = gasMultiplier
+    this.overrides = overrides
   }
 
   async preEstimateUserOperationGas({
@@ -129,9 +130,67 @@ export class GenericFeeEstimator implements IFeeEstimator {
 
     // Calculate maxFeePerGas
     const maxFeePerGas = baseFeePerGas + maxPriorityFeePerGas
-    return {
-      maxFeePerGas: BigInt(Math.ceil(Number(maxFeePerGas) * this.gasMultiplier)),
-      maxPriorityFeePerGas: BigInt(Math.ceil(Number(maxPriorityFeePerGas) * this.gasMultiplier))
+
+    let maxFeePerGasMod = 0n
+    let maxPriorityFeePerGasMod = 0n
+    if (this.overrides != null) {
+      maxFeePerGasMod =
+        this.overrides.maxFeePerGas ??
+        BigInt(
+          Math.floor(
+            (Number(maxFeePerGas) *
+              ((this.overrides.maxFeePerGasPercentageMultiplier ?? 50) + 100)) /
+              100
+          )
+        )
+      maxPriorityFeePerGasMod =
+        this.overrides.maxPriorityFeePerGas ??
+        BigInt(
+          Math.floor(
+            (Number(maxPriorityFeePerGas) *
+              ((this.overrides.maxPriorityFeePerGasPercentageMultiplier ?? 50) + 100)) /
+              100
+          )
+        )
+    } else {
+      maxFeePerGasMod = BigInt(Math.floor(Number(maxFeePerGas) * 1.5))
+      maxPriorityFeePerGasMod = BigInt(Math.floor(Number(maxPriorityFeePerGas) * 1.5))
     }
+
+    return {
+      maxFeePerGas: maxFeePerGasMod,
+      maxPriorityFeePerGas: maxPriorityFeePerGasMod
+    }
+  }
+
+  dummySignatureCreator({
+    expectedSigners,
+    validAfter,
+    validUntil,
+    isInit,
+    webAuthnSharedSigner,
+    webAuthnSignerFactory,
+    webAuthnSignerSingleton,
+    eip7212WebAuthnPrecompileVerifier,
+    eip7212WebAuthnContractVerifier
+  }: DummySignatureCreatorFunctionProps): string {
+    const dummySignerSignaturePairs = SafeAccount.createDummySignerSignaturePairForExpectedSigners(
+      expectedSigners,
+      {
+        isInit,
+        webAuthnSharedSigner: webAuthnSharedSigner,
+        eip7212WebAuthnPrecompileVerifier: eip7212WebAuthnPrecompileVerifier,
+        eip7212WebAuthnContractVerifier: eip7212WebAuthnContractVerifier,
+        webAuthnSignerFactory: webAuthnSignerFactory,
+        webAuthnSignerSingleton: webAuthnSignerSingleton,
+        validAfter,
+        validUntil
+      }
+    )
+
+    return SafeAccount.formatSignaturesToUseroperationSignature(dummySignerSignaturePairs, {
+      validAfter,
+      validUntil
+    })
   }
 }

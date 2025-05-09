@@ -13,6 +13,7 @@ import {
 } from '@safe-global/types-kit'
 import BaseSafeOperation from '@safe-global/relay-kit/packs/safe-4337/BaseSafeOperation'
 import { RPC_4337_CALLS } from '@safe-global/relay-kit/packs/safe-4337/constants'
+import { Signer } from 'abstractionkit'
 
 type ExistingSafeOptions = {
   safeAddress: string
@@ -146,6 +147,34 @@ export type EstimateFeeFunctionProps = {
   paymasterOptions?: PaymasterOptions
 }
 
+export type GenericFeeEstimatorOverrides = {
+  expectedSigners?: Signer[]
+  validAfter?: bigint
+  validUntil?: bigint
+  isInit?: boolean
+  webAuthnSharedSigner?: string
+  webAuthnSignerFactory?: string
+  webAuthnSignerSingleton?: string
+  eip7212WebAuthnPrecompileVerifier?: string
+  eip7212WebAuthnContractVerifier?: string
+  maxFeePerGas?: bigint
+  maxPriorityFeePerGas?: bigint
+  maxFeePerGasPercentageMultiplier?: number
+  maxPriorityFeePerGasPercentageMultiplier?: number
+}
+
+export type DummySignatureCreatorFunctionProps = {
+  expectedSigners: Signer[]
+  validAfter?: bigint
+  validUntil?: bigint
+  isInit?: boolean
+  webAuthnSharedSigner?: string
+  webAuthnSignerFactory?: string
+  webAuthnSignerSingleton?: string
+  eip7212WebAuthnPrecompileVerifier?: string
+  eip7212WebAuthnContractVerifier?: string
+}
+
 export type EstimateFeeFunction = ({
   userOperation,
   bundlerUrl,
@@ -153,9 +182,23 @@ export type EstimateFeeFunction = ({
   paymasterOptions
 }: EstimateFeeFunctionProps) => Promise<EstimateGasData>
 
+export type DummySignatureCreatorFunction = ({
+  expectedSigners,
+  validAfter,
+  validUntil,
+  isInit,
+  webAuthnSharedSigner,
+  webAuthnSignerFactory,
+  webAuthnSignerSingleton,
+  eip7212WebAuthnPrecompileVerifier,
+  eip7212WebAuthnContractVerifier
+}: DummySignatureCreatorFunctionProps) => string
+
 export interface IFeeEstimator {
   preEstimateUserOperationGas?: EstimateFeeFunction
   postEstimateUserOperationGas?: EstimateFeeFunction
+  dummySignatureCreator?: DummySignatureCreatorFunction
+  overrides?: GenericFeeEstimatorOverrides
 }
 
 export type EstimateFeeProps = {

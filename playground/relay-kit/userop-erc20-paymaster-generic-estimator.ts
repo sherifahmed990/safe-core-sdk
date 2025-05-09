@@ -51,6 +51,9 @@ async function main() {
       feeEstimator: new GenericFeeEstimator(
           RPC_URL,
           CHAIN_ID,
+          {
+              expectedSigners:['0xd9C27865C687e4e505B4E93Ac616043813755dd6']
+          }
       )
     }
   })
