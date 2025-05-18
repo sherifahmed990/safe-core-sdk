@@ -47,9 +47,6 @@ async function main() {
       value: '0x0',
       data: '0x'
     }],
-    options: {
-      feeEstimator: new GenericFeeEstimator()
-    }
   })
 
   // 3) Sign SafeOperation

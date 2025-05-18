@@ -31,10 +31,7 @@ async function main() {
       to: '0xfaDDcFd59924F559AC24350C4b9dA44b57E62857',
       value: '0x0',
       data: '0x'
-    }],
-    options: {
-      feeEstimator: new GenericFeeEstimator(),
-    }
+    }]
   })
 
   // 3) Sign SafeOperation

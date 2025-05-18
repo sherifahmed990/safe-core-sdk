@@ -49,7 +49,7 @@ import {
   getRelayKitVersion,
   createUserOperation
 } from '@safe-global/relay-kit/packs/safe-4337/utils'
-import { PimlicoFeeEstimator } from '@safe-global/relay-kit/packs/safe-4337/estimators/pimlico/PimlicoFeeEstimator'
+import { GenericFeeEstimator } from './estimators'
 
 const MAX_ERC20_AMOUNT_TO_APPROVE =
   0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
@@ -415,7 +415,7 @@ export class Safe4337Pack extends RelayKitBasePack<{
 
   async getEstimateFee({
     safeOperation,
-    feeEstimator = new PimlicoFeeEstimator()
+    feeEstimator = new GenericFeeEstimator()
   }: EstimateFeeProps): Promise<BaseSafeOperation> {
     const threshold = await this.protocolKit.getThreshold()
     const preEstimationData = await feeEstimator?.preEstimateUserOperationGas?.({
